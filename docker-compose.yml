@@ -5,6 +5,7 @@ services:
   zookeeper:
     image: confluentinc/cp-zookeeper:5.3.1
     hostname: zookeeper
+    container_name: demo_zookeeper
     ports:
       - "2181:2181"
     environment:
@@ -13,7 +14,8 @@ services:
 
   broker-1:
     image: confluentinc/cp-enterprise-kafka:5.3.1
-    hostname: broker
+    hostname: broker-1
+    container_name: demo_broker-1
     depends_on:
       - zookeeper
     ports:
@@ -31,6 +33,7 @@ services:
   broker-2:
     image: confluentinc/cp-enterprise-kafka:5.3.1
     hostname: broker-2
+    container_name: demo_broker-2
     depends_on:
       - zookeeper
     ports:
@@ -48,6 +51,7 @@ services:
   broker-3:
     image: confluentinc/cp-enterprise-kafka:5.3.1
     hostname: broker-3
+    container_name: demo_broker-3
     depends_on:
       - zookeeper
     ports:
@@ -63,6 +67,7 @@ services:
   schema-registry:
     image: confluentinc/cp-schema-registry:5.3.1
     hostname: schema-registry
+    container_name: demo_schema-registry
     ports: 
       - "8081:8081"
     depends_on:
@@ -79,8 +84,9 @@ services:
 #    image: nbuesing/kafka-connect-opensky:1.0.0
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: connect.docker
     hostname: connect
+    container_name: demo_connect
     restart: always
     ports:
       - '58083:8083'
@@ -108,46 +114,50 @@ services:
       CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
       CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
 
-  ksql-server:
-    image: confluentinc/cp-ksql-server:5.4.0-dist-1
-    #image: confluentinc/cp-ksql-server:5.3.1
-    hostname: ksql-server
-    depends_on:
-      - broker-1
-      - broker-2
-      - broker-3
-      - connect
-#    ports:
-#      - "8088:8088"
-    volumes:
-      - ./ext:/etc/ksql/ext
-    environment:
-      KSQL_CONFIG_DIR: /etc/ksql
-      KSQL_KSQL_EXTENSION_DIR: "/etc/ksql/ext"
-      KSQL_UDFS_ENABLED: "true"
-      KSQL_LOG4J_OPTS: "-Dlog4j.configuration=file:/etc/ksql/log4j-rolling.properties"
-      KSQL_LOG4J_ROOT_LOGLEVEL: DEBUG
-      KSQL_TOOLS_LOG4J_LOGLEVEL: DEBUG
-      KSQL_BOOTSTRAP_SERVERS: "broker-1:9092,broker-2:9092,broker-3:9092"
-      KSQL_HOST_NAME: ksql-server
-      KSQL_APPLICATION_ID: "ksql-server"
-      KSQL_LISTENERS: "http://0.0.0.0:8088"
-      KSQL_CACHE_MAX_BYTES_BUFFERING: 0
-      KSQL_KSQL_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-      KSQL_PRODUCER_INTERCEPTOR_CLASSES: ""
-      KSQL_CONSUMER_INTERCEPTOR_CLASSES: ""
+#  ksql-server:
+#    image: confluentinc/cp-ksql-server:5.4.0-dist-1
+#    #image: confluentinc/cp-ksql-server:5.3.1
+#    hostname: ksql-server
+#    container_name: demo_ksql-server
+#    depends_on:
+#      - broker-1
+#      - broker-2
+#      - broker-3
+#      - connect
+##    ports:
+##      - "8088:8088"
+#    volumes:
+#      - ./ksqldb-udfs/build/libs:/etc/ksql/ext
+#    environment:
+#      KSQL_CONFIG_DIR: /etc/ksql
+#      KSQL_KSQL_EXTENSION_DIR: "/etc/ksql/ext"
+#      KSQL_UDFS_ENABLED: "true"
+#      KSQL_LOG4J_OPTS: "-Dlog4j.configuration=file:/etc/ksql/log4j-rolling.properties"
+#      KSQL_LOG4J_ROOT_LOGLEVEL: DEBUG
+#      KSQL_TOOLS_LOG4J_LOGLEVEL: DEBUG
+#      KSQL_BOOTSTRAP_SERVERS: "broker-1:9092,broker-2:9092,broker-3:9092"
+#      KSQL_HOST_NAME: ksql-server
+#      KSQL_APPLICATION_ID: "ksql-server"
+#      KSQL_LISTENERS: "http://0.0.0.0:8088"
+#      KSQL_CACHE_MAX_BYTES_BUFFERING: 0
+#      KSQL_KSQL_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+#      KSQL_PRODUCER_INTERCEPTOR_CLASSES: ""
+#      KSQL_CONSUMER_INTERCEPTOR_CLASSES: ""
 
-  ksql-cli:
-    image: confluentinc/cp-ksql-cli:5.4.0-dist-1
-    #image: confluentinc/cp-ksql-cli:5.3.1
-    depends_on:
-      - ksql-server
-    entrypoint: /bin/sh
-    tty: true
+#  ksql-cli:
+#    image: confluentinc/cp-ksql-cli:5.4.0-dist-1
+#    #image: confluentinc/cp-ksql-cli:5.3.1
+#    hostname: ksql-cli
+#    container_name: demo_ksql-cli
+#    depends_on:
+#      - ksql-server
+#    entrypoint: /bin/sh
+#    tty: true
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.4.2
-    container_name: elasticsearch
+    hostname: elasticsearch
+    container_name: demo_elasticsearch
     ports:
       - 9200:9200
       - 9300:9300
@@ -156,11 +166,12 @@ services:
       discovery.type: single-node
       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
     volumes: 
-      - ./data/container_data/elasticserarch:/usr/share/elasticsearch/data
+      - ./elasticsearch/data/elasticserarch:/usr/share/elasticsearch/data
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.4.2
-    container_name: kibana
+    hostname: kibana
+    container_name: demo_kibana
     depends_on:
       - elasticsearch
     ports:

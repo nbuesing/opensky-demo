@@ -1,0 +1,42 @@
+FROM confluentinc/cp-kafka-connect:5.3.1
+
+#
+# add the confluent-hub-components directory to the connect plugin path.
+#
+ENV CONNECT_PLUGIN_PATH="/usr/share/java,/usr/share/confluent-hub-components"
+
+#
+# copy the built opensky source connector to the distro, to allow the confluent-hub local file installation to work.
+#
+COPY opensky-source-connector/build/distributions/nbuesing-opensky-source-connector.zip /hub-downloads/
+
+##COPY build/distributions/jcustenborder-kafka-connect-spooldir-1.0.41.zip /hub/downloads
+
+#RUN \
+#    mkdir -p /spooldir/input && \
+#    mkdir -p /spooldir/error && \
+#    mkdir -p /spooldir/finished
+#
+#COPY airlines.csv /spooldir/input
+
+#
+# Remove the built-in connectors that are not being used to improve startup performance
+#
+# kafka-connect-elasticsearch is the only pre-installed connectoring being used.
+#
+# install the opensky-source-connector, since it is bundled in the confluent-hub format, the confluent-hub local-file install
+# is the best way to deploy the connector
+#
+RUN \
+    rm -fr /usr/share/java/kafka-connect-activemq && \
+    rm -fr /usr/share/java/kafka-connect-ibmmq && \
+    rm -fr /usr/share/java/kafka-connect-jdbc && \
+    rm -fr /usr/share/java/kafka-connect-jms && \
+    rm -fr /usr/share/java/kafka-connect-s3 && \
+    confluent-hub install --no-prompt /hub-downloads/nbuesing-opensky-source-connector.zip && \
+    confluent-hub install --no-prompt jcustenborder/kafka-connect-spooldir:latest
+
+
+
+##    confluent-hub install --no-prompt /hub-downloads/jcustenborder-kafka-connect-spooldir-1.0.41.zip
+
