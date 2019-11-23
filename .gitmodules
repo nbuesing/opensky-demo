@@ -1,0 +1,8 @@
+[submodule "opensky-source-connector"]
+	path = opensky-source-connector
+	url = https://github.com/nbuesing/opensky-source-connector.git
+	branch = master
+[submodule "ksqldb-udfs"]
+	path = ksqldb-udfs
+	url = https://github.com/nbuesing/ksqldb-udfs.git
+	branch = master
