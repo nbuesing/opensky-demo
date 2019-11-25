@@ -1,0 +1,44 @@
+#!/bin/bash
+
+ACCEPT="Accept:application/json"
+CONTENT_TYPE="Content-Type:application/json"
+
+URL="http://localhost:9200/_template/kafkaconnect"
+
+PUT_DATA=$(cat <<EOF
+{
+  "index_patterns": [
+		"*"
+	],
+  "settings": { 
+		"number_of_shards": 1, 
+		"number_of_replicas": 0 
+	},
+  "mappings": { 
+		"_source": {
+      "enabled": true
+    },
+		"dynamic_templates": [
+      {
+        "longs_as_dates": {
+          "match_mapping_type": "long",
+					"match" : "*_TS",
+          "mapping": {
+            "type": "date"
+          }
+        }
+			}
+		],
+		"properties": { 
+				"LOCATION": { 
+						"type": "geo_point" 
+				}
+		}
+	}          
+}
+EOF
+)
+
+
+curl -i -H "${ACCEPT}" -H "${CONTENT_TYPE}" -X PUT --data "${PUT_DATA}" ${URL}
+

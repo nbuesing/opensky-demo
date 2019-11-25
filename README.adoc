@@ -1,0 +1,91 @@
+
+
+```
+SET 'auto.offset.reset'='earliest';
+```
+
+```
+create stream flights with (KAFKA_TOPIC='flights', VALUE_FORMAT='avro');
+```
+
+. Create a stream that captures all fights and does a re-key to ensure all updates go to elastic
+
+. make sure the location is in a format that elastic can understand.
+
+. ensure epoc is converted as a date in elastic.
+
+```
+CREATE STREAM all_updates \
+    WITH (\
+        KAFKA_TOPIC='all_updates', \
+        PARTITIONS=5, \
+        REPLICAS=3, \
+        TIMESTAMP='updated_ts' \
+    ) \
+    as select rowkey + '_' + cast(lastcontact as string) as key, \
+    lastcontact as updated_ts, \
+    id, \
+    callsign, \
+    geo_point(location) as location, \
+    velocity as velocity,
+    geometricaltitude as altitude \
+    from flights \
+    partition by key;
+```
+
+
+```
+CREATE TABLE accel \
+    WITH (\
+        KAFKA_TOPIC='accel', \
+        PARTITIONS=5, \
+        REPLICAS=3 \
+    ) \
+    as select \
+    id, \
+    acceleration(timestamped(velocity, lastcontact)) as acceleration \
+    from flights \
+    group by id;
+```
+
+```
+CREATE stream current \
+    WITH (\
+        KAFKA_TOPIC='current', \
+        PARTITIONS=5, \
+        REPLICAS=3 \
+    ) \
+    as select \
+      flights.lastcontact as updated_ts, \
+      flights.id as id, \
+      flights.callsign as callsign, \
+      geo_point(flights.location) as location, \
+      flights.velocity as velocity, \
+      flights.geometricaltitude as altitude, \
+      accel.acceleration \
+    from flights \
+    join accel on accel.id = flights.id;
+```
+
+
+
+
+
+create stream accelerating with (KAFKA_TOPIC='accel', VALUE_FORMAT='avro');
+
+```
+CREATE STREAM accelerating \
+    WITH (\
+        KAFKA_TOPIC='accelerating', \
+        PARTITIONS=5, \
+        REPLICAS=3, \
+        TIMESTAMP='updated_ts' \
+    ) \
+    as select \
+      id, \
+      callsign, \
+      updated_ts, \
+      location, \
+      (acceleration > 0) as is_accelerating \
+    from accel;
+```

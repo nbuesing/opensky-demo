@@ -1,0 +1,77 @@
+#!/bin/bash
+
+if [ $# -ne 2 ]; then
+  echo "Usage: $0 topic {create|pause|resume|delete|status}"
+  exit
+fi
+
+topic=$1
+shift
+command=$1
+shift
+
+name="elastic-$topic"
+
+ACCEPT="Accept:application/json"
+CONTENT_TYPE="Content-Type:application/json"
+
+URL="http://localhost:8083/connectors"
+
+POST_DATA=$(cat <<EOF
+{
+    "name": "${name}",
+    "config": {
+      "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+      "topics": "${topic}",
+      "connection.url": "http://elasticsearch:9200",
+      "key.ignore": "false",
+      "schema.ignore": "true",
+			"type.name": "",
+      "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+			"behavior.on.malformed.documents": "warn"
+    }
+}
+EOF
+)
+
+
+create() {
+  curl -i -H "${ACCEPT}" -H "${CONTENT_TYPE}" -X POST --data "${POST_DATA}" ${URL}
+}
+
+pause() {
+  curl -s -i -H "${ACCEPT}" -H "${CONTENT_TYPE}" -X PUT ${URL}/${name}/pause
+}
+
+resume() {
+  curl -i -H "${ACCEPT}" -H "${CONTENT_TYPE}" -X PUT ${URL}/${name}/resume
+}
+
+delete() {
+  curl -i -H "${ACCEPT}" -H "${CONTENT_TYPE}" -X DELETE ${URL}/${name}
+}
+
+status() {
+  curl -s -H "${ACCEPT}" -H "${CONTENT_TYPE}" -X GET ${URL}/${name}/status
+}
+
+case "$command" in
+  create)
+    create
+    ;;
+  pause)
+    pause
+    ;;
+  resume)
+    resume 
+    ;;
+  delete)
+    delete
+    ;;
+  status)
+    status
+    ;;
+  *)
+    echo "Usage: $0 topic {create|pause|resume|delete|status}"
+esac
+

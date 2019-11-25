@@ -1,0 +1,61 @@
+#!/bin/bash
+
+ACCEPT="Accept:application/json"
+CONTENT_TYPE="Content-Type:application/json"
+
+URL="http://localhost:8083/connectors"
+
+POST_DATA=$(cat <<EOF
+{
+    "name": "opensky",
+    "config": {
+        "connector.class": "com.github.nbuesing.kafka.connect.opensky.OpenSkySourceConnector",
+        "tasks.max": "1",
+        "topic": "flights",
+        "interval" : 10
+    }
+}
+EOF
+)
+
+
+create() {
+  curl -i -H "${ACCEPT}" -H "${CONTENT_TYPE}" -X POST --data "${POST_DATA}" ${URL}
+}
+
+pause() {
+  curl -s -i -H "${ACCEPT}" -H "${CONTENT_TYPE}" -X PUT ${URL}/opensky/pause
+}
+
+resume() {
+  curl -i -H "${ACCEPT}" -H "${CONTENT_TYPE}" -X PUT ${URL}/opensky/resume
+}
+
+delete() {
+  curl -i -H "${ACCEPT}" -H "${CONTENT_TYPE}" -X DELETE ${URL}/opensky
+}
+
+status() {
+  curl -s -H "${ACCEPT}" -H "${CONTENT_TYPE}" -X GET ${URL}/opensky/status
+}
+
+case "$1" in
+  create)
+    create
+    ;;
+  pause)
+    pause
+    ;;
+  resume)
+    resume 
+    ;;
+  delete)
+    delete
+    ;;
+  status)
+    status
+    ;;
+  *)
+    echo "Usage: $0 {create|pause|resume|delete|status}"
+esac
+
