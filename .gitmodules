@@ -1,8 +1,7 @@
-[submodule "opensky-source-connector"]
-	path = opensky-source-connector
-	url = https://github.com/nbuesing/opensky-source-connector
+[submodule "kafka-connect-opensky"]
+	path = kafka-connect-opensky
+	url = https://github.com/nbuesing/kafka-connect-opensky
 	branch = master
 [submodule "ksqldb-udfs"]
 	path = ksqldb-udfs
 	url = https://github.com/nbuesing/ksqldb-udfs
-	branch = master
